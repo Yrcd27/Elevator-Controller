@@ -1,0 +1,136 @@
+$date
+	Wed Dec 17 21:15:12 2025
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1s
+$end
+$scope module elevator_tb $end
+$var wire 1 ! moving $end
+$var wire 1 " direction $end
+$var wire 2 # current_floor [1:0] $end
+$var reg 1 $ clk $end
+$var reg 2 % request_floor [1:0] $end
+$var reg 1 & request_valid $end
+$var reg 1 ' reset $end
+$scope module dut $end
+$var wire 1 $ clk $end
+$var wire 2 ( request_floor [1:0] $end
+$var wire 1 & request_valid $end
+$var wire 1 ' reset $end
+$var reg 2 ) current_floor [1:0] $end
+$var reg 1 " direction $end
+$var reg 1 ! moving $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+$end
+#0
+$dumpvars
+b0 )
+b0 (
+1'
+0&
+b0 %
+0$
+b0 #
+0"
+0!
+$end
+#5
+1$
+#10
+0$
+0'
+#15
+1$
+#20
+0$
+1&
+b11 %
+b11 (
+#25
+b1 #
+b1 )
+1!
+1"
+1$
+#30
+0$
+#35
+b10 #
+b10 )
+1$
+#40
+0$
+#45
+b11 #
+b11 )
+1$
+#50
+0$
+#55
+0!
+1$
+#60
+0$
+0&
+#65
+1$
+#70
+0$
+#75
+1$
+#80
+0$
+1&
+b1 %
+b1 (
+#85
+b10 #
+b10 )
+1!
+0"
+1$
+#90
+0$
+#95
+b1 #
+b1 )
+1$
+#100
+0$
+#105
+0!
+1$
+#110
+0$
+#115
+1$
+#120
+0$
+0&
+#125
+1$
+#130
+0$
+#135
+1$
+#140
+0$
+#145
+1$
+#150
+0$
+#155
+1$
+#160
+0$
+#165
+1$
+#170
+0$
