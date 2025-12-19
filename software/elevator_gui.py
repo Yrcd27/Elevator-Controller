@@ -145,8 +145,11 @@ class ElevatorGUI:
             self.status_labels[key] = value_label
             
         # Reset button
+        reset_frame = tk.Frame(control_frame, bg=self.colors['bg'])
+        reset_frame.pack(pady=(20, 0))
+        
         tk.Button(
-            control_frame,
+            reset_frame,
             text="RESET",
             font=('Arial', 10, 'bold'),
             bg='#F44336',
@@ -154,7 +157,19 @@ class ElevatorGUI:
             width=12,
             height=2,
             command=self.reset_elevator
-        ).pack(pady=(20, 0))
+        ).pack()
+        
+        # Emergency stop button
+        tk.Button(
+            reset_frame,
+            text="STOP",
+            font=('Arial', 10, 'bold'),
+            bg='#FF5722',
+            fg='white',
+            width=12,
+            height=2,
+            command=self.stop_elevator
+        ).pack(pady=(5, 0))
         
     def create_elevator_display(self, parent):
         """Create the elevator shaft visualization"""
@@ -364,14 +379,71 @@ class ElevatorGUI:
         
     def request_floor(self, floor):
         """Handle floor request"""
-        if not self.is_moving:
+        if not self.is_moving and self.current_floor != floor:
             self.target_floor = floor
-            self.status_text.config(text=f"Floor {floor} requested...")
+            self.is_moving = True
+            
+            # Determine direction
+            if self.current_floor < floor:
+                self.direction = "up"
+            else:
+                self.direction = "down"
+                
+            self.status_text.config(text=f"Moving to floor {floor}...")
             self.update_display()
-            # TODO: In next task, implement actual elevator movement
-            print(f"Floor {floor} requested")
+            
+            # Start elevator movement animation
+            self.move_elevator()
+            
+        elif self.current_floor == floor:
+            self.status_text.config(text=f"Already at floor {floor}")
         else:
             self.status_text.config(text="Elevator is moving, please wait...")
+            
+    def move_elevator(self):
+        """Animate elevator movement"""
+        if self.is_moving and self.current_floor != self.target_floor:
+            # Move one floor
+            if self.current_floor < self.target_floor:
+                self.current_floor += 1
+                self.direction = "up"
+            else:
+                self.current_floor -= 1 
+                self.direction = "down"
+                
+            # Update status with floor info
+            remaining_floors = abs(self.target_floor - self.current_floor)
+            if remaining_floors > 0:
+                self.status_text.config(
+                    text=f"Floor {self.current_floor} - Moving {self.direction} to {self.target_floor} ({remaining_floors} floors remaining)"
+                )
+            else:
+                self.status_text.config(text=f"Arriving at floor {self.current_floor}...")
+                
+            # Update display
+            self.update_display()
+            
+            # Check if we've reached target
+            if self.current_floor == self.target_floor:
+                self.is_moving = False
+                self.status_text.config(text=f"✓ Arrived at floor {self.current_floor} - Doors opening")
+                self.update_display()
+                
+                # Simulate door opening delay
+                self.root.after(1500, lambda: self.status_text.config(text="Ready for next request"))
+            else:
+                # Continue moving after delay (simulate elevator speed)
+                self.root.after(1000, self.move_elevator)  # 1 second per floor
+            
+    def stop_elevator(self):
+        """Emergency stop - stop elevator at current floor"""
+        if self.is_moving:
+            self.is_moving = False
+            self.target_floor = self.current_floor
+            self.status_text.config(text=f"Emergency stop at floor {self.current_floor}")
+            self.update_display()
+        else:
+            self.status_text.config(text="Elevator is not moving")
             
     def reset_elevator(self):
         """Reset elevator to ground floor"""
@@ -391,10 +463,15 @@ class ElevatorGUI:
         
         # Update button colors
         for i, btn in enumerate(self.floor_buttons):
-            if i == self.current_floor:
-                btn.config(bg=self.colors['floor_active'])
+            if i == self.current_floor and not self.is_moving:
+                # Current floor - highlighted
+                btn.config(bg=self.colors['floor_active'], state='disabled')
+            elif i == self.target_floor and self.is_moving:
+                # Target floor while moving - orange
+                btn.config(bg=self.colors['button_active'], state='normal')
             else:
-                btn.config(bg=self.colors['button_normal'])
+                # Normal floor button
+                btn.config(bg=self.colors['button_normal'], state='normal')
                 
         # Update floor indicators
         for floor in range(4):
