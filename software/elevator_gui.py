@@ -15,8 +15,8 @@ class ElevatorGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Elevator Controller - 4 Floor Building")
-        self.root.geometry("800x600")
-        self.root.resizable(False, False)
+        self.root.geometry("800x750")  # Made even taller
+        self.root.resizable(True, True)  # Allow resizing
         
         # Elevator state variables
         self.current_floor = 0
@@ -27,6 +27,9 @@ class ElevatorGUI:
         # Verilog simulation interface
         self.verilog_available = False
         self.setup_verilog_interface()
+        
+        # Debug: Print Verilog status
+        print(f"DEBUG: Verilog available = {self.verilog_available}")
         
         # Colors and styling
         self.colors = {
@@ -205,30 +208,56 @@ class ElevatorGUI:
         ).pack(pady=(5, 0))
         
         # Simulation mode toggle
-        sim_frame = tk.Frame(control_frame, bg=self.colors['bg'])
-        sim_frame.pack(pady=(10, 0))
+        sim_frame = tk.LabelFrame(
+            control_frame, 
+            text="Simulation Mode",
+            font=('Arial', 10, 'bold'),
+            bg=self.colors['bg']
+        )
+        sim_frame.pack(pady=(10, 0), fill='x')
         
         self.sim_mode = tk.BooleanVar()
         self.sim_mode.set(self.verilog_available)
         
         sim_check = tk.Checkbutton(
             sim_frame,
-            text="Use Verilog Simulation",
+            text="Use Verilog Hardware Simulation",
             variable=self.sim_mode,
+            font=('Arial', 10, 'bold'),
+            bg=self.colors['bg'],
+            fg='#333',
+            selectcolor='#4CAF50',
+            state='normal' if self.verilog_available else 'disabled',
+            command=self.on_simulation_mode_change
+        )
+        sim_check.pack(pady=10, padx=10, anchor='w')
+        
+        # Status label for simulation mode
+        sim_status = "✅ Available" if self.verilog_available else "❌ Icarus Verilog not found"
+        status_color = '#4CAF50' if self.verilog_available else '#F44336'
+        
+        tk.Label(
+            sim_frame,
+            text=f"Status: {sim_status}",
             font=('Arial', 9),
             bg=self.colors['bg'],
-            state='normal' if self.verilog_available else 'disabled'
-        )
-        sim_check.pack()
+            fg=status_color
+        ).pack(padx=10, anchor='w')
         
-        if not self.verilog_available:
-            tk.Label(
-                sim_frame,
-                text="(Icarus Verilog not found)",
-                font=('Arial', 8),
-                bg=self.colors['bg'],
-                fg='#999'
-            ).pack()
+        # Debug: Print checkbox creation
+        print(f"DEBUG: Checkbox created, Verilog available = {self.verilog_available}")
+        
+    def on_simulation_mode_change(self):
+        """Handle simulation mode toggle"""
+        if self.sim_mode.get():
+            mode = "Verilog Hardware (step-by-step)"
+            details = "Floor requests will use actual HDL simulation with clock cycles"
+        else:
+            mode = "GUI Animation (smooth)"
+            details = "Floor requests will use smooth GUI animation"
+            
+        print(f"Simulation mode changed to: {mode}")
+        self.status_text.config(text=f"Mode: {mode} - {details}")
         
     def create_elevator_display(self, parent):
         """Create the elevator shaft visualization"""
@@ -546,20 +575,69 @@ class ElevatorGUI:
         sim_thread.start()
         
     def handle_verilog_result(self, result):
-        """Handle Verilog simulation results"""
-        self.current_floor = result.get('current_floor', self.target_floor)
-        self.is_moving = result.get('moving', False)
-        self.direction = result.get('direction', 'up')
-        
-        self.status_text.config(
-            text=f"✓ Verilog simulation complete - Arrived at floor {self.current_floor}"
-        )
-        
-        self.update_display()
-        
+        """Handle Verilog simulation results with step-by-step animation"""
+        if 'steps' in result and len(result['steps']) > 0:
+            # Animate step by step based on Verilog simulation
+            self.animate_verilog_steps(result['steps'], result)
+        else:
+            # Fallback to direct result
+            self.current_floor = result.get('current_floor', self.target_floor)
+            self.is_moving = result.get('moving', False)
+            self.direction = result.get('direction', 'up')
+            
+            self.status_text.config(
+                text=f"✓ Verilog simulation complete - Arrived at floor {self.current_floor}"
+            )
+            
+            self.update_display()
+            
         # Show simulation output in console
         if 'simulation_output' in result:
             print(f"Verilog simulation output:\n{result['simulation_output']}")
+            
+    def animate_verilog_steps(self, steps, final_result):
+        """Animate elevator movement step by step based on Verilog simulation"""
+        if not steps:
+            return
+            
+        self.status_text.config(text="Playing back Verilog hardware simulation...")
+        
+        def animate_step(step_index):
+            if step_index < len(steps):
+                step = steps[step_index]
+                
+                # Update elevator state from Verilog step
+                self.current_floor = step['floor']
+                self.is_moving = step['moving']
+                self.direction = step['direction']
+                
+                # Update status with step info
+                step_info = f"Verilog Step {step_index + 1}: Floor {step['floor']}"
+                if step['moving']:
+                    step_info += f" (moving {step['direction']})"
+                else:
+                    step_info += " (stopped)"
+                    
+                self.status_text.config(text=step_info)
+                
+                # Update visual display
+                self.update_display()
+                
+                # Schedule next step
+                self.root.after(800, lambda: animate_step(step_index + 1))  # 800ms per step
+            else:
+                # Animation complete
+                self.current_floor = final_result.get('current_floor', self.target_floor)
+                self.is_moving = final_result.get('moving', False)
+                self.direction = final_result.get('direction', 'up')
+                
+                self.status_text.config(
+                    text=f"✓ Verilog simulation complete - Floor {self.current_floor} (Hardware verified)"
+                )
+                self.update_display()
+        
+        # Start the step-by-step animation
+        animate_step(0)
             
     def handle_verilog_error(self):
         """Handle Verilog simulation errors"""
