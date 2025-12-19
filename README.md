@@ -1,23 +1,37 @@
-# Elevator Controller – Verilog HDL (4 Floors)
+# Elevator Controller – Verilog HDL with Python GUI (4 Floors)
 
 ## Project Overview
 
-This project implements a **simple elevator controller for a 4-floor building** using **Verilog HDL**.
-The controller decides elevator movement based on a requested floor and the current floor.
-Simulation and verification are done using **Icarus Verilog** and **GTKWave**.
+This project implements a **complete elevator controller system for a 4-floor building** using **Verilog HDL** with an integrated **Python GUI interface**.
+The system combines hardware description language design with modern graphical interface for demonstration and interaction.
+Simulation and verification are done using **Icarus Verilog** and **GTKWave**, while the GUI provides real-time control and visualization.
 
-This project is designed for **academic learning purposes** and demonstrates basic digital design concepts such as sequential logic and control logic.
+This project is designed for **academic learning purposes** and demonstrates:
+- Digital design concepts (sequential logic, control logic, finite state machines)
+- Hardware-software integration
+- GUI development with real-time visualization
+- Simulation and testing methodologies
 
 ---
 
 ## Features
 
+### Hardware (Verilog)
 * Supports **4 floors** (Floor 0 to Floor 3)
 * One floor request at a time
 * Elevator moves **one floor per clock cycle**
 * Direction control (Up / Down)
 * Reset functionality
 * Fully simulated with waveform verification
+
+### Software (Python GUI)
+* **Interactive graphical interface** with Tkinter
+* **Real-time elevator visualization** with shaft and car animation
+* **Floor request buttons** for intuitive control
+* **Status monitoring** (current floor, direction, movement state)
+* **Verilog simulation integration** (optional)
+* **Control functions** (emergency stop, reset)
+* **Responsive design** with smooth animations
 
 ---
 
@@ -26,7 +40,9 @@ This project is designed for **academic learning purposes** and demonstrates bas
 * **VS Code** – Code editor
 * **Icarus Verilog** – Verilog compiler and simulator
 * **GTKWave** – Waveform viewer
-* **Windows OS**
+* **Python 3.6+** – GUI development
+* **Tkinter** – GUI framework (included with Python)
+* **Windows OS** (compatible with Linux/macOS)
 
 All tools used are **free and open source**.
 
@@ -44,8 +60,36 @@ elevator_controller/
 │   ├── wave.vcd               # Waveform file (generated after simulation)
 │   └── elevator_sim           # Compiled simulation executable
 ├── software/
-│   └── (GUI implementation will be added here)
-└── README.md                  # Project documentation
+│   ├── elevator_gui.py        # Main GUI application
+│   ├── verilog_interface.py   # Verilog simulation bridge
+│   ├── run_gui.py             # Quick launcher
+│   ├── test_suite.py          # Automated tests
+│   └── README.md              # GUI documentation
+└── README.md                  # Project documentation (this file)
+```
+
+---
+
+## Quick Start
+
+### 1. Run the GUI Interface
+```bash
+cd software
+python run_gui.py
+```
+
+### 2. Traditional Verilog Simulation
+```bash
+cd simulation
+iverilog -o elevator_sim elevator_controller.v elevator_tb.v
+./elevator_sim
+gtkwave wave.vcd  # View waveforms
+```
+
+### 3. Run Tests
+```bash
+cd software
+python test_suite.py
 ```
 
 ---

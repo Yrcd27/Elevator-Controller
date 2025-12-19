@@ -92,8 +92,12 @@ class ElevatorGUI:
         self.create_elevator_display(content_frame)
         
         # Status bar
-        self.create_status_bar(main_frame)
+        self.create_status_bar(main_frame)        
+        # Initialize display
+        self.update_display()
         
+        # Start periodic updates for better visual feedback
+        self.start_periodic_updates()        
     def create_control_panel(self, parent):
         """Create the control panel with floor buttons and status"""
         control_frame = tk.LabelFrame(
@@ -378,6 +382,71 @@ class ElevatorGUI:
             tags="elevator_car"
         )
         
+    def draw_elevator_at_position(self, position):
+        """Draw elevator at a specific position (for smooth animation)"""
+        if not hasattr(self, 'canvas'):
+            return
+            
+        # Remove existing elevator car
+        self.canvas.delete("elevator_car")
+        
+        shaft_x = 90
+        shaft_width = 120
+        floor_height = 320 // 4
+        shaft_y = 40
+        
+        # Calculate elevator position based on fractional floor position
+        # Position 0.0 = floor 0, 1.5 = halfway between floor 1 and 2, etc.
+        total_height = 320
+        car_y = shaft_y + total_height - ((position + 1) * floor_height) + 10
+        car_height = floor_height - 20
+        car_width = shaft_width - 20
+        car_x = shaft_x + 10
+        
+        # Draw elevator car
+        self.canvas.create_rectangle(
+            car_x, car_y,
+            car_x + car_width, car_y + car_height,
+            fill=self.colors['elevator_car'],
+            outline='#2E7D32',
+            width=2,
+            tags="elevator_car"
+        )
+        
+        # Draw elevator door
+        door_width = car_width - 20
+        door_height = car_height - 20
+        door_x = car_x + 10
+        door_y = car_y + 10
+        
+        self.canvas.create_rectangle(
+            door_x, door_y,
+            door_x + door_width, door_y + door_height,
+            fill='#66BB6A',
+            outline='#2E7D32',
+            width=1,
+            tags="elevator_car"
+        )
+        
+        # Door split line
+        self.canvas.create_line(
+            door_x + door_width//2, door_y,
+            door_x + door_width//2, door_y + door_height,
+            fill='#2E7D32',
+            width=2,
+            tags="elevator_car"
+        )
+        
+        # Floor number (show current floor or target if moving)
+        display_floor = int(round(position))
+        self.canvas.create_text(
+            car_x + car_width//2, car_y + car_height//2,
+            text=str(display_floor),
+            font=('Arial', 24, 'bold'),
+            fill='white',
+            tags="elevator_car"
+        )
+        
     def draw_direction_arrows(self):
         """Draw direction arrows next to the elevator"""
         # Remove existing arrows
@@ -601,6 +670,38 @@ class ElevatorGUI:
         """Cleanup resources when closing"""
         if hasattr(self, 'verilog_sim') and self.verilog_sim:
             self.verilog_sim.cleanup()
+            
+    def start_periodic_updates(self):
+        """Start periodic UI updates for smooth animation"""
+        self.update_status_bar_time()
+        self.root.after(1000, self.start_periodic_updates)  # Update every second
+        
+    def update_status_bar_time(self):
+        """Update status bar with current time"""
+        current_time = time.strftime("%H:%M:%S")
+        if hasattr(self, 'status_text'):
+            current_status = self.status_text.cget('text')
+            if not self.is_moving and 'Ready' not in current_status:
+                self.status_text.config(text=f"Ready for requests - {current_time}")
+                
+    def animate_elevator_smooth(self, start_floor, end_floor):
+        """Create smooth animation between floors"""
+        if not hasattr(self, 'canvas'):
+            return
+            
+        # Calculate animation steps
+        steps = 20  # Number of animation frames
+        floor_diff = end_floor - start_floor
+        
+        for step in range(steps + 1):
+            progress = step / steps
+            current_pos = start_floor + (floor_diff * progress)
+            
+            # Update elevator position smoothly
+            self.root.after(
+                step * 50,  # 50ms per frame
+                lambda pos=current_pos: self.draw_elevator_at_position(pos)
+            )
 
 def main():
     """Main function to run the GUI"""
