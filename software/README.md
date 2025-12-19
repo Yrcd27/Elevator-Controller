@@ -2,6 +2,36 @@
 
 A Python Tkinter-based graphical interface for the 4-floor elevator controller Verilog project.
 
+## Testing Framework
+
+### **🏆 Comprehensive Testing Suite**
+
+The project includes both manual and automated testing capabilities:
+
+#### **Manual Testing (GUI-Based)**
+- **Interface:** `manual_testing_gui.py`
+- **Features:** Real-time Verilog validation, results logging, intuitive GUI
+- **Use Case:** Interactive testing with immediate feedback
+
+#### **Automated Testing (Verilog Testbench)**
+- **Interface:** `automated_verilog_tester.py` 
+- **Coverage:** 14 comprehensive test cases covering all floor combinations
+- **Features:** Edge case testing, detailed Verilog testbench generation
+- **Use Case:** Systematic validation and regression testing
+
+#### **Test Cases Covered:**
+1. **Basic Movement:** All floor-to-floor combinations (1→2, 1→3, 1→4, etc.)
+2. **Edge Cases:** Same floor requests, multiple rapid requests
+3. **Direction Changes:** Up-to-down and down-to-up transitions
+4. **Boundary Testing:** Floor 1 and Floor 4 edge conditions
+5. **Reset Functionality:** System reset during operation
+
+#### **Testing Workflow:**
+1. **Run Testing Launcher:** `python testing_launcher.py`
+2. **Choose Testing Mode:** Manual GUI, Automated Suite, or Both
+3. **Review Results:** Real-time feedback and detailed logs
+4. **Verify Hardware:** All tests validate actual Verilog simulation
+
 ## Features
 
 - **Interactive GUI** with elevator shaft visualization
@@ -14,15 +44,39 @@ A Python Tkinter-based graphical interface for the 4-floor elevator controller V
 
 ## Quick Start
 
-1. **Run the GUI:**
+### **🎯 Testing Suite Launcher (Recommended)**
+```bash
+cd software
+python testing_launcher.py
+```
+
+This provides access to all testing modes:
+- **Main GUI** - Interactive elevator controller
+- **Manual Testing** - GUI with Verilog validation  
+- **Automated Testing** - Comprehensive testbench suite
+- **Direct Verilog Test** - Quick verification
+- **Full Test Suite** - Complete validation
+
+### **Individual Components**
+
+1. **Main GUI:**
    ```bash
-   cd software
-   python run_gui.py
+   python elevator_gui.py
    ```
 
-2. **Test the system:**
+2. **Manual Testing Interface:**
    ```bash
-   python test_suite.py
+   python manual_testing_gui.py
+   ```
+
+3. **Automated Verilog Tests:**
+   ```bash
+   python automated_verilog_tester.py
+   ```
+
+4. **Quick Launcher:**
+   ```bash
+   python run_gui.py
    ```
 
 ## Requirements

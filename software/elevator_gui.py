@@ -247,6 +247,96 @@ class ElevatorGUI:
         # Debug: Print checkbox creation
         print(f"DEBUG: Checkbox created, Verilog available = {self.verilog_available}")
         
+        # Testing interface buttons
+        testing_frame = tk.LabelFrame(
+            control_frame,
+            text="Testing Tools",
+            font=('Arial', 10, 'bold'),
+            bg=self.colors['bg']
+        )
+        testing_frame.pack(fill='x', pady=(10, 0))
+        
+        test_btn_frame = tk.Frame(testing_frame, bg=self.colors['bg'])
+        test_btn_frame.pack(pady=5)
+        
+        tk.Button(
+            test_btn_frame,
+            text="🧪 Manual Testing",
+            font=('Arial', 9),
+            bg='#9C27B0',
+            fg='white',
+            width=18,
+            command=self.open_manual_testing
+        ).pack(pady=2)
+        
+        tk.Button(
+            test_btn_frame,
+            text="🤖 Auto Tests",
+            font=('Arial', 9),
+            bg='#673AB7',
+            fg='white', 
+            width=18,
+            command=self.run_automated_tests
+        ).pack(pady=2)
+        
+    def open_manual_testing(self):
+        """Open manual testing interface"""
+        import subprocess
+        import os
+        
+        try:
+            # Run manual testing GUI
+            script_path = os.path.join(os.path.dirname(__file__), "manual_testing_gui.py")
+            subprocess.Popen(["python", script_path])
+            self.status_text.config(text="Manual testing interface opened in new window")
+        except Exception as e:
+            self.status_text.config(text=f"Error opening manual testing: {e}")
+            
+    def run_automated_tests(self):
+        """Run automated tests in background"""
+        import subprocess
+        import os
+        
+        def run_tests():
+            try:
+                script_path = os.path.join(os.path.dirname(__file__), "automated_verilog_tester.py")
+                result = subprocess.run(
+                    ["python", script_path],
+                    capture_output=True,
+                    text=True,
+                    timeout=120
+                )
+                
+                # Update status on main thread
+                if result.returncode == 0:
+                    self.root.after(0, lambda: self.status_text.config(
+                        text="✅ Automated tests completed successfully! Check console output."
+                    ))
+                else:
+                    self.root.after(0, lambda: self.status_text.config(
+                        text="❌ Some automated tests failed. Check console output."
+                    ))
+                    
+                # Print results to console
+                print("\n" + "="*50)
+                print("AUTOMATED TEST RESULTS:")
+                print("="*50)
+                print(result.stdout)
+                if result.stderr:
+                    print("ERRORS:")
+                    print(result.stderr)
+                    
+            except Exception as e:
+                self.root.after(0, lambda: self.status_text.config(
+                    text=f"Automated testing error: {e}"
+                ))
+        
+        # Start tests in background
+        self.status_text.config(text="Running automated tests in background...")
+        import threading
+        test_thread = threading.Thread(target=run_tests, daemon=True)
+        test_thread.start()
+        
     def on_simulation_mode_change(self):
         """Handle simulation mode toggle"""
         if self.sim_mode.get():
