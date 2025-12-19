@@ -37,10 +37,15 @@ All tools used are **free and open source**.
 ```text
 elevator_controller/
 │
-├── elevator_controller.v   # Main elevator controller module
-├── elevator_tb.v           # Testbench for simulation
-├── wave.vcd                # Waveform file (generated after simulation)
-└── README.md               # Project documentation
+├── hardware/
+│   └── elevator_controller.v   # Main elevator controller module
+├── simulation/
+│   ├── elevator_tb.v           # Testbench for simulation
+│   ├── wave.vcd               # Waveform file (generated after simulation)
+│   └── elevator_sim           # Compiled simulation executable
+├── software/
+│   └── (GUI implementation will be added here)
+└── README.md                  # Project documentation
 ```
 
 ---
