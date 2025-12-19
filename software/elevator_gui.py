@@ -167,17 +167,186 @@ class ElevatorGUI:
         )
         display_frame.pack(side=tk.RIGHT, expand=True, fill='both')
         
-        # Placeholder for elevator visualization
-        placeholder = tk.Label(
+        # Canvas for elevator visualization
+        self.canvas = tk.Canvas(
             display_frame,
-            text="Elevator Visualization\n(Will be implemented in next task)",
-            font=('Arial', 12),
-            bg='#eeeeee',
-            fg='#666',
+            width=300,
+            height=400,
+            bg='white',
             relief=tk.SUNKEN,
             borderwidth=2
         )
-        placeholder.pack(expand=True, fill='both', padx=20, pady=20)
+        self.canvas.pack(padx=20, pady=20)
+        
+        # Initialize elevator visualization
+        self.setup_elevator_shaft()
+        
+    def setup_elevator_shaft(self):
+        """Draw the elevator shaft and floors"""
+        # Clear canvas
+        self.canvas.delete("all")
+        
+        # Shaft dimensions
+        shaft_width = 120
+        shaft_height = 320
+        shaft_x = 90  # Center horizontally
+        shaft_y = 40  # Start from top
+        
+        # Draw shaft walls
+        self.canvas.create_rectangle(
+            shaft_x, shaft_y, 
+            shaft_x + shaft_width, shaft_y + shaft_height,
+            fill=self.colors['elevator_shaft'],
+            outline='#999',
+            width=2
+        )
+        
+        # Draw floor lines and labels
+        floor_height = shaft_height // 4
+        self.floor_positions = []
+        
+        for floor in range(4):
+            # Calculate position (floor 0 at bottom, floor 3 at top)
+            y_pos = shaft_y + shaft_height - (floor * floor_height) - floor_height
+            self.floor_positions.append(y_pos)
+            
+            # Draw floor line
+            self.canvas.create_line(
+                shaft_x, y_pos + floor_height,
+                shaft_x + shaft_width, y_pos + floor_height,
+                fill='#666',
+                width=2
+            )
+            
+            # Floor number label (left side)
+            self.canvas.create_text(
+                shaft_x - 20, y_pos + floor_height // 2,
+                text=f"F{3-floor}",  # Reverse order for display (F3 at top)
+                font=('Arial', 12, 'bold'),
+                fill='#333'
+            )
+            
+            # Floor indicator light (right side)
+            indicator_x = shaft_x + shaft_width + 20
+            indicator_y = y_pos + floor_height // 2
+            
+            # Create floor indicator (will be updated based on current floor)
+            color = self.colors['floor_active'] if (3-floor) == self.current_floor else '#ddd'
+            self.canvas.create_oval(
+                indicator_x - 8, indicator_y - 8,
+                indicator_x + 8, indicator_y + 8,
+                fill=color,
+                outline='#999',
+                width=2,
+                tags=f"floor_indicator_{3-floor}"
+            )
+        
+        # Draw elevator car
+        self.draw_elevator_car()
+        
+        # Draw direction arrows
+        self.draw_direction_arrows()
+        
+    def draw_elevator_car(self):
+        """Draw the elevator car at current position"""
+        # Remove existing elevator car
+        self.canvas.delete("elevator_car")
+        
+        shaft_x = 90
+        shaft_width = 120
+        floor_height = 320 // 4
+        shaft_y = 40
+        
+        # Calculate elevator position
+        # Floor positions are stored with floor 0 at index 3, floor 3 at index 0
+        floor_index = 3 - self.current_floor
+        car_y = self.floor_positions[floor_index] + 10
+        car_height = floor_height - 20
+        car_width = shaft_width - 20
+        car_x = shaft_x + 10
+        
+        # Draw elevator car
+        self.canvas.create_rectangle(
+            car_x, car_y,
+            car_x + car_width, car_y + car_height,
+            fill=self.colors['elevator_car'],
+            outline='#2E7D32',
+            width=2,
+            tags="elevator_car"
+        )
+        
+        # Draw elevator door
+        door_width = car_width - 20
+        door_height = car_height - 20
+        door_x = car_x + 10
+        door_y = car_y + 10
+        
+        self.canvas.create_rectangle(
+            door_x, door_y,
+            door_x + door_width, door_y + door_height,
+            fill='#66BB6A',
+            outline='#2E7D32',
+            width=1,
+            tags="elevator_car"
+        )
+        
+        # Draw door split line
+        self.canvas.create_line(
+            door_x + door_width//2, door_y,
+            door_x + door_width//2, door_y + door_height,
+            fill='#2E7D32',
+            width=2,
+            tags="elevator_car"
+        )
+        
+        # Current floor indicator inside elevator
+        self.canvas.create_text(
+            car_x + car_width//2, car_y + car_height//2,
+            text=str(self.current_floor),
+            font=('Arial', 24, 'bold'),
+            fill='white',
+            tags="elevator_car"
+        )
+        
+    def draw_direction_arrows(self):
+        """Draw direction arrows next to the elevator"""
+        # Remove existing arrows
+        self.canvas.delete("direction_arrow")
+        
+        if self.is_moving:
+            shaft_x = 90
+            shaft_width = 120
+            arrow_x = shaft_x + shaft_width + 50
+            
+            # Find current elevator position
+            floor_index = 3 - self.current_floor
+            arrow_y = self.floor_positions[floor_index] + 40
+            
+            # Draw arrow based on direction
+            if self.direction == "up":
+                # Up arrow
+                points = [
+                    arrow_x, arrow_y - 10,      # Top point
+                    arrow_x - 8, arrow_y + 2,  # Bottom left
+                    arrow_x + 8, arrow_y + 2   # Bottom right
+                ]
+                color = '#4CAF50'
+            else:
+                # Down arrow  
+                points = [
+                    arrow_x, arrow_y + 10,      # Bottom point
+                    arrow_x - 8, arrow_y - 2,  # Top left
+                    arrow_x + 8, arrow_y - 2   # Top right
+                ]
+                color = '#FF9800'
+                
+            self.canvas.create_polygon(
+                points,
+                fill=color,
+                outline='#333',
+                width=2,
+                tags="direction_arrow"
+            )
         
     def create_status_bar(self, parent):
         """Create the bottom status bar"""
@@ -214,7 +383,7 @@ class ElevatorGUI:
         self.update_display()
         
     def update_display(self):
-        """Update the status display"""
+        """Update the status display and visual elements"""
         self.status_labels['current_floor'].config(text=str(self.current_floor))
         self.status_labels['target_floor'].config(text=str(self.target_floor))
         self.status_labels['moving'].config(text="Yes" if self.is_moving else "No")
@@ -226,6 +395,15 @@ class ElevatorGUI:
                 btn.config(bg=self.colors['floor_active'])
             else:
                 btn.config(bg=self.colors['button_normal'])
+                
+        # Update floor indicators
+        for floor in range(4):
+            indicator_color = self.colors['floor_active'] if floor == self.current_floor else '#ddd'
+            self.canvas.itemconfig(f"floor_indicator_{floor}", fill=indicator_color)
+            
+        # Redraw elevator car and arrows
+        self.draw_elevator_car()
+        self.draw_direction_arrows()
 
 def main():
     """Main function to run the GUI"""
