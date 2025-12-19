@@ -8,6 +8,8 @@ import tkinter as tk
 from tkinter import ttk
 import threading
 import time
+import os
+from verilog_interface import VerilogSimulator
 
 class ElevatorGUI:
     def __init__(self, root):
@@ -22,6 +24,10 @@ class ElevatorGUI:
         self.is_moving = False
         self.direction = "up"  # "up" or "down"
         
+        # Verilog simulation interface
+        self.verilog_available = False
+        self.setup_verilog_interface()
+        
         # Colors and styling
         self.colors = {
             'bg': '#f0f0f0',
@@ -33,6 +39,29 @@ class ElevatorGUI:
         }
         
         self.setup_ui()
+        
+    def setup_verilog_interface(self):
+        """Initialize Verilog simulation interface"""
+        try:
+            # Get paths relative to software directory
+            software_dir = os.path.dirname(os.path.abspath(__file__))
+            project_dir = os.path.dirname(software_dir)
+            hardware_dir = os.path.join(project_dir, "hardware")
+            simulation_dir = os.path.join(project_dir, "simulation")
+            
+            self.verilog_sim = VerilogSimulator(hardware_dir, simulation_dir)
+            
+            # Check if Verilog tools are available
+            if self.verilog_sim.check_verilog_tools():
+                self.verilog_available = True
+                print("✓ Verilog simulation interface initialized")
+            else:
+                self.verilog_available = False
+                print("ℹ Running in GUI-only mode (Verilog tools not available)")
+                
+        except Exception as e:
+            print(f"Warning: Verilog interface initialization failed: {e}")
+            self.verilog_available = False
         
     def setup_ui(self):
         """Initialize the user interface"""
@@ -170,6 +199,32 @@ class ElevatorGUI:
             height=2,
             command=self.stop_elevator
         ).pack(pady=(5, 0))
+        
+        # Simulation mode toggle
+        sim_frame = tk.Frame(control_frame, bg=self.colors['bg'])
+        sim_frame.pack(pady=(10, 0))
+        
+        self.sim_mode = tk.BooleanVar()
+        self.sim_mode.set(self.verilog_available)
+        
+        sim_check = tk.Checkbutton(
+            sim_frame,
+            text="Use Verilog Simulation",
+            variable=self.sim_mode,
+            font=('Arial', 9),
+            bg=self.colors['bg'],
+            state='normal' if self.verilog_available else 'disabled'
+        )
+        sim_check.pack()
+        
+        if not self.verilog_available:
+            tk.Label(
+                sim_frame,
+                text="(Icarus Verilog not found)",
+                font=('Arial', 8),
+                bg=self.colors['bg'],
+                fg='#999'
+            ).pack()
         
     def create_elevator_display(self, parent):
         """Create the elevator shaft visualization"""
@@ -381,24 +436,84 @@ class ElevatorGUI:
         """Handle floor request"""
         if not self.is_moving and self.current_floor != floor:
             self.target_floor = floor
-            self.is_moving = True
             
-            # Determine direction
-            if self.current_floor < floor:
-                self.direction = "up"
+            if self.sim_mode.get() and self.verilog_available:
+                # Use Verilog simulation
+                self.request_floor_verilog(floor)
             else:
-                self.direction = "down"
+                # Use GUI animation
+                self.request_floor_gui(floor)
                 
-            self.status_text.config(text=f"Moving to floor {floor}...")
-            self.update_display()
-            
-            # Start elevator movement animation
-            self.move_elevator()
-            
         elif self.current_floor == floor:
             self.status_text.config(text=f"Already at floor {floor}")
         else:
             self.status_text.config(text="Elevator is moving, please wait...")
+            
+    def request_floor_verilog(self, floor):
+        """Handle floor request using Verilog simulation"""
+        self.status_text.config(text=f"Running Verilog simulation for floor {floor}...")
+        self.is_moving = True
+        self.update_display()
+        
+        # Run simulation in background thread to avoid GUI freezing
+        def run_simulation():
+            try:
+                success, result = self.verilog_sim.simulate_elevator_request(
+                    floor, self.current_floor
+                )
+                
+                if success and result:
+                    # Update GUI with simulation results
+                    self.root.after(0, lambda: self.handle_verilog_result(result))
+                else:
+                    self.root.after(0, lambda: self.handle_verilog_error())
+                    
+            except Exception as e:
+                print(f"Simulation thread error: {e}")
+                self.root.after(0, lambda: self.handle_verilog_error())
+                
+        # Start simulation thread
+        sim_thread = threading.Thread(target=run_simulation, daemon=True)
+        sim_thread.start()
+        
+    def handle_verilog_result(self, result):
+        """Handle Verilog simulation results"""
+        self.current_floor = result.get('current_floor', self.target_floor)
+        self.is_moving = result.get('moving', False)
+        self.direction = result.get('direction', 'up')
+        
+        self.status_text.config(
+            text=f"✓ Verilog simulation complete - Arrived at floor {self.current_floor}"
+        )
+        
+        self.update_display()
+        
+        # Show simulation output in console
+        if 'simulation_output' in result:
+            print(f"Verilog simulation output:\n{result['simulation_output']}")
+            
+    def handle_verilog_error(self):
+        """Handle Verilog simulation errors"""
+        self.is_moving = False
+        self.status_text.config(text="Simulation error - falling back to GUI mode")
+        self.sim_mode.set(False)
+        self.update_display()
+        
+    def request_floor_gui(self, floor):
+        """Handle floor request using GUI animation (original method)"""
+        self.is_moving = True
+        
+        # Determine direction
+        if self.current_floor < floor:
+            self.direction = "up"
+        else:
+            self.direction = "down"
+            
+        self.status_text.config(text=f"Moving to floor {floor}...")
+        self.update_display()
+        
+        # Start elevator movement animation
+        self.move_elevator()
             
     def move_elevator(self):
         """Animate elevator movement"""
@@ -481,12 +596,29 @@ class ElevatorGUI:
         # Redraw elevator car and arrows
         self.draw_elevator_car()
         self.draw_direction_arrows()
+        
+    def cleanup(self):
+        """Cleanup resources when closing"""
+        if hasattr(self, 'verilog_sim') and self.verilog_sim:
+            self.verilog_sim.cleanup()
 
 def main():
     """Main function to run the GUI"""
     root = tk.Tk()
     app = ElevatorGUI(root)
-    root.mainloop()
+    
+    # Handle window closing
+    def on_closing():
+        app.cleanup()
+        root.destroy()
+        
+    root.protocol("WM_DELETE_WINDOW", on_closing)
+    
+    try:
+        root.mainloop()
+    except KeyboardInterrupt:
+        print("\nApplication closed by user")
+        app.cleanup()
 
 if __name__ == "__main__":
     main()
