@@ -1,6 +1,6 @@
 <div align="center">
 
-# Elevator Controller - Verilog HDL with Python GUI (4 Floors)
+# Elevator Controller - Verilog HDL with Python GUI
 
 A 4-floor elevator controller implemented in **Verilog HDL** with an integrated **Python (Tkinter) GUI**, featuring FSM-based control, simulation, and hardware-software integration.
 
