@@ -1,4 +1,16 @@
-# Elevator Controller – Verilog HDL with Python GUI (4 Floors)
+<div align="center">
+
+# Elevator Controller - Verilog HDL with Python GUI (4 Floors)
+
+A 4-floor elevator controller implemented in **Verilog HDL** with an integrated **Python (Tkinter) GUI**, featuring FSM-based control, simulation, and hardware-software integration.
+
+[![Python](https://img.shields.io/badge/Python-3.6%2B-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org)
+[![Verilog](https://img.shields.io/badge/Verilog-HDL-8A2BE2?style=flat)](https://en.wikipedia.org/wiki/Verilog)
+[![Tkinter](https://img.shields.io/badge/Tkinter-GUI-FFB000?style=flat)](https://docs.python.org/3/library/tkinter.html)
+[![Icarus%20Verilog](https://img.shields.io/badge/Icarus%20Verilog-Simulator-2C5AA0?style=flat)](http://iverilog.icarus.com/)
+[![GTKWave](https://img.shields.io/badge/GTKWave-Waveform%20Viewer-4B8BBE?style=flat)](http://gtkwave.sourceforge.net/)
+
+</div>
 
 ## Project Overview
 
